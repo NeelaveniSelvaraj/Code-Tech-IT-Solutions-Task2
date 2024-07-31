@@ -1,0 +1,92 @@
+index.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Forecast</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Weather Forecast</h1>
+    <form id="locationForm">
+        <label for="location">Enter Location:</label>
+        <input type="text" id="location" name="location" required>
+        <button type="submit">Get Temperature</button>
+    </form>
+    <div id="temperature">
+        <h2>Temperature</h2>
+        <div id="temperatureData"></div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
+
+
+
+styles.css
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+h1 {
+    color: #333;
+}
+
+form {
+    margin-bottom: 20px;
+}
+
+#temperature {
+    margin-top: 20px;
+}
+
+#temperatureData {
+    font-size: 1.2em;
+}
+
+script.js
+document.getElementById('locationForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+    
+    const location = document.getElementById('location').value;
+    const geocodeUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1`;
+    
+    try {
+        const geocodeResponse = await fetch(geocodeUrl);
+        const geocodeData = await geocodeResponse.json();
+        
+        if (geocodeData.results.length === 0) {
+            throw new Error('Location not found');
+        }
+        
+        const { latitude, longitude } = geocodeData.results[0];
+        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m&forecast_days=1`;
+        
+        const weatherResponse = await fetch(weatherUrl);
+        const weatherData = await weatherResponse.json();
+        
+        displayTemperature(weatherData);
+    } catch (error) {
+        document.getElementById('temperatureData').innerHTML = `<p>Error: ${error.message}</p>`;
+    }
+});
+
+function displayTemperature(data) {
+    const { hourly } = data;
+    let html = '<ul>';
+    
+    for (let i = 0; i < hourly.time.length; i++) {
+        html += `<li>
+            <strong>Time:</strong> ${hourly.time[i]}<br>
+            <strong>Temperature:</strong> ${hourly.temperature_2m[i]}°C
+        </li>`;
+    }
+    
+    html += '</ul>';
+    document.getElementById('temperatureData').innerHTML = html;
+}
+
+
